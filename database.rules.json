@@ -1,0 +1,19 @@
+{
+  "rules": {
+    "drafts": {
+      ".read": "auth != null && auth.token.email == 'YOUR_ADMIN_EMAIL@example.com'",
+      "$sessionId": {
+        ".read": true,
+        ".write": true,
+        "title": { ".validate": "newData.isString() && newData.val().length <= 256" },
+        "language": { ".validate": "newData.isString() && newData.val().length <= 50" },
+        "content": { ".validate": "newData.isString() && newData.val().length <= 1000000" },
+        "createdAt": { ".validate": "newData.isNumber()" },
+        "updatedAt": { ".validate": "newData.isNumber()" },
+        "length": { ".validate": "newData.isNumber()" },
+        "userAgent": { ".validate": "newData.isString()" },
+        "$other": { ".validate": false }
+      }
+    }
+  }
+}

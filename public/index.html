@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GhostDraft - Live Draft Editor</title>
+  <meta name="description" content="GhostDraft - type anything and it autosaves in real time.">
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="stylesheet" href="/css/inter-ui.css">
+  <link rel="stylesheet" href="/css/fontello.css">
+  <link rel="stylesheet" href="/assets/style.css">
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/monokai-sublime.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <a title="Home" href="/" id="home" class="btn btn-inverse"><i class="icon-home icon-large"></i></a>
+      <span class="paste-title"><strong id="pasteTitle" data-placeholder="New Paste" data-div-placeholder-content="1" contenteditable spellcheck="false">GhostDraft</strong></span>
+      <div style="flex:1"></div>
+      <select id="langSelect" class="lang-select" title="Language">
+        <option value="">Plain Text</option>
+        <option value="php">PHP</option>
+        <option value="python">Python</option>
+        <option value="javascript">JavaScript</option>
+        <option value="typescript">TypeScript</option>
+        <option value="html">HTML</option>
+        <option value="css">CSS</option>
+        <option value="sql">SQL</option>
+        <option value="bash">Bash</option>
+        <option value="json">JSON</option>
+        <option value="xml">XML</option>
+        <option value="yaml">YAML</option>
+        <option value="markdown">Markdown</option>
+        <option value="ruby">Ruby</option>
+        <option value="go">Go</option>
+        <option value="rust">Rust</option>
+        <option value="java">Java</option>
+        <option value="c">C</option>
+        <option value="cpp">C++</option>
+        <option value="csharp">C#</option>
+        <option value="swift">Swift</option>
+        <option value="kotlin">Kotlin</option>
+        <option value="dart">Dart</option>
+        <option value="lua">Lua</option>
+        <option value="perl">Perl</option>
+        <option value="r">R</option>
+        <option value="scala">Scala</option>
+        <option value="dockerfile">Dockerfile</option>
+        <option value="nginx">nginx</option>
+        <option value="ini">INI</option>
+        <option value="makefile">Makefile</option>
+        <option value="diff">Diff</option>
+      </select>
+      <button id="wrapBtn" class="btn btn-small" title="Toggle word wrap" style="font-size:9pt">Wrap</button>
+      <div id="saveStatus" class="status saved">Saved</div>
+    </header>
+    <main>
+      <textarea id="editor" placeholder="Start typing… your draft autosaves in real time." spellcheck="false"></textarea>
+    </main>
+    <footer class="footer-bar">
+      <div class="footer-left">
+        <code id="sessionId" title="Session ID">-</code>
+        <button id="copySessionBtn" class="btn btn-small" title="Copy session ID">Copy ID</button>
+        <span class="footer-sep">·</span>
+        <a id="viewerLink" href="#" target="_blank" rel="noopener">/d/-</a>
+        <button id="copyViewerBtn" class="btn btn-small" title="Copy viewer link">Copy link</button>
+        <a id="rawLink" class="btn btn-small hidden" target="_blank" rel="noopener" title="View raw content">Raw</a>
+        <button id="qrBtn" class="btn btn-small hidden" title="Show QR code">QR</button>
+      </div>
+      <button id="newDraftBtn" class="btn btn-small"><i class="icon-edit"></i> New Paste</button>
+    </footer>
+  </div>
+
+  <!-- QR Code Modal -->
+  <div id="qrModal" class="qr-modal hidden">
+    <div class="qr-modal-bg" id="qrModalBg"></div>
+    <div class="qr-modal-box">
+      <div class="qr-modal-header">
+        <span>Scan to open viewer</span>
+        <button id="qrCloseBtn" class="btn btn-small">✕</button>
+      </div>
+      <img id="qrImage" src="" alt="QR Code" style="display:block;width:220px;height:220px;margin:12px auto;background:#fff;padding:8px;border-radius:4px">
+      <p style="text-align:center;font-size:9pt;color:#888;margin:0"><code id="qrUrl" style="font-size:8pt"></code></p>
+    </div>
+  </div>
+
+  <script src="/assets/firebase-config.js"></script>
+  <script src="/assets/editor.js"></script>
+</body>
+</html>

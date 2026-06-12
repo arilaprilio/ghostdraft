@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+
+# Real Firebase config (keep the example template)
+public/assets/firebase-config.js
+
+# Backup / unused
+_bak/
+
+# Wrangler temp
+.wrangler/
+
+# Environment
+.env
+.env.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GhostDraft - Live Viewer</title>
+  <meta name="description" content="GhostDraft live viewer - watch text update in real time.">
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="stylesheet" href="/css/inter-ui.css">
+  <link rel="stylesheet" href="/css/fontello.css">
+  <link rel="stylesheet" href="/assets/style.css">
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/monokai-sublime.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <a title="Home" href="/" id="home" class="btn btn-inverse"><i class="icon-home icon-large"></i></a>
+      <span class="paste-title"><strong id="pasteTitle">GhostDraft</strong></span>
+      <span id="viewerLang" class="lang-badge" style="font-size:8pt;color:#888;margin-left:8px"></span>
+      <div style="flex:1"></div>
+      <button id="wrapBtn" class="btn btn-small" title="Toggle word wrap" style="font-size:9pt">Wrap</button>
+      <div id="connectionStatus" class="status connecting">Connecting…</div>
+    </header>
+    <main>
+      <div id="viewerContent" class="viewer-content loading">Waiting for draft data…</div>
+      <div id="notFound" class="not-found hidden">
+        <h2>Draft tidak ditemukan</h2>
+        <p>The draft you are looking for does not exist or may have been removed.</p>
+        <a href="/">← Create a new draft</a>
+      </div>
+    </main>
+    <footer class="footer-bar">
+      <div class="footer-left">
+        <code id="viewerSessionId" style="font-size:8pt">-</code>
+      </div>
+      <a href="/"><i class="icon-edit"></i> New Paste</a>
+    </footer>
+  </div>
+  <script src="/assets/firebase-config.js"></script>
+  <script src="/assets/viewer.js"></script>
+</body>
+</html>
