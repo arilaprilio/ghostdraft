@@ -1,43 +1,56 @@
+// GhostDraft — Cloudflare Workers entry point
+//
+// Firebase config via env bindings. Set vars with EITHER method:
+//   1. Cloudflare Dashboard > Workers & Pages > [worker] > Settings > Variables
+//   2. wrangler.jsonc → vars section, then npx wrangler deploy
+//   3. npx wrangler secret put FIREBASE_API_KEY (encrypted)
+// All three expose the value as env.FIREBASE_API_KEY inside the worker.
+// After adding/changing variables, REDEPLOY the worker.
+
 export default {
   async fetch(request, env) {
-    const url = new URL(request.url);
-    const path = url.pathname;
+    try {
+      const url = new URL(request.url);
+      const path = url.pathname;
 
-    // Route: home / editor
-    if (path === '/' || path === '') {
-      return fetchAsset(env, '/index.html', url.origin);
-    }
-
-    // Route: admin
-    if (path === '/admin' || path === '/admin/') {
-      return fetchAsset(env, '/admin.html', url.origin);
-    }
-
-    // Route: viewer
-    if (path === '/d' || path.startsWith('/d/')) {
-      return fetchAsset(env, '/viewer.html', url.origin);
-    }
-
-    // Route: raw — fetch from Firebase REST API, return text/plain
-    if (path.startsWith('/raw/')) {
-      const sessionId = path.split('/').filter(Boolean).pop();
-      if (!sessionId) {
-        return new Response('No session ID.', { status: 400, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+      // Home / editor
+      if (path === '/' || path === '') {
+        return serveHTML(env, '/index.html', url);
       }
-      return serveRaw(env, sessionId);
-    }
 
-    // Block direct access to internal html files and clean-url paths
-    if (path === '/viewer.html' || path === '/raw.html' || path === '/viewer' || path === '/raw') {
-      return new Response('', { status: 302, headers: { 'Location': '/' } });
-    }
+      // Admin
+      if (path === '/admin' || path === '/admin/') {
+        return serveHTML(env, '/admin.html', url);
+      }
 
-    // Serve static files via ASSETS binding, injecting config into HTML
-    return serveAsset(env, request);
+      // Viewer
+      if (path === '/d' || path.startsWith('/d/')) {
+        return serveHTML(env, '/viewer.html', url);
+      }
+
+      // Raw — server-side Firebase REST proxy
+      if (path.startsWith('/raw/')) {
+        const sessionId = path.split('/').filter(Boolean).pop();
+        if (!sessionId) {
+          return new Response('No session ID.', { status: 400, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+        }
+        return serveRaw(env, sessionId);
+      }
+
+      // Block direct access to internal pages
+      if (path === '/viewer.html' || path === '/raw.html' || path === '/viewer' || path === '/raw') {
+        return Response.redirect(url.origin + '/', 302);
+      }
+
+      // All other paths: serve static asset (inject config if HTML)
+      return serveHTML(env, path, url);
+    } catch (e) {
+      return new Response('GhostDraft Error: ' + e.message, { status: 500 });
+    }
   }
 };
 
-// ---------- Firebase config from Cloudflare env bindings ----------
+// ---------- Firebase config ----------
 function getFirebaseConfig(env) {
   return {
     apiKey: env.FIREBASE_API_KEY || '',
@@ -51,41 +64,64 @@ function getFirebaseConfig(env) {
   };
 }
 
+// ---------- Inject Firebase config into HTML ----------
 function injectConfig(html, env) {
   const config = getFirebaseConfig(env);
-  const script = '<script>var firebaseConfig = ' + JSON.stringify(config) + ';</script>';
-  return html.replace('<!-- FIREBASE_CONFIG -->', script);
+  const script =
+    '<script>' +
+    'var firebaseConfig = ' + JSON.stringify(config) + ';' +
+    'if(!firebaseConfig.apiKey||!firebaseConfig.databaseURL){' +
+    'console.warn("GhostDraft: Firebase config missing. Set env vars in Cloudflare Dashboard or wrangler.jsonc, then redeploy.");' +
+    '}' +
+    '</script>';
+
+  // Replace placeholder (standard path)
+  if (html.includes('<!-- FIREBASE_CONFIG -->')) {
+    return html.replace('<!-- FIREBASE_CONFIG -->', script);
+  }
+
+  // Fallback: inject before </head> (old HTML without placeholder)
+  return html.replace('</head>', script + '</head>');
 }
 
-// ---------- Serve asset with config injection for HTML ----------
-async function serveAsset(env, request) {
-  let resp = await env.ASSETS.fetch(request);
-  const ct = resp.headers.get('Content-Type') || '';
-  if (ct.includes('text/html')) {
+// ---------- Serve HTML with config injection ----------
+async function serveHTML(env, filePath, url) {
+  // Fetch asset from ASSETS binding using absolute URL
+  const assetUrl = url.origin + (filePath.startsWith('/') ? filePath : '/' + filePath);
+  let resp = await env.ASSETS.fetch(new Request(assetUrl));
+
+  // Follow clean-URL redirects
+  while ((resp.status === 301 || resp.status === 302 || resp.status === 307) && resp.headers.get('Location')) {
+    resp = await env.ASSETS.fetch(new Request(resp.headers.get('Location')));
+  }
+
+  const contentType = resp.headers.get('Content-Type') || '';
+  if (contentType.includes('text/html')) {
     const html = await resp.text();
     return new Response(injectConfig(html, env), {
-      status: resp.status,
-      headers: resp.headers,
+      status: 200,
+      headers: { 'Content-Type': 'text/html; charset=utf-8' },
     });
   }
+
   return resp;
 }
 
-// ---------- Raw proxy ----------
+// ---------- Raw proxy: fetch from Firebase REST API ----------
 async function serveRaw(env, sessionId) {
   const databaseURL = env.FIREBASE_DATABASE_URL;
   if (!databaseURL) {
     return new Response('Error: FIREBASE_DATABASE_URL not configured.', { status: 500, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
   }
   try {
-    const fbUrl = databaseURL + '/drafts/' + encodeURIComponent(sessionId) + '.json';
+    const dbUrl = databaseURL.replace(/\/$/, '');
+    const fbUrl = dbUrl + '/drafts/' + encodeURIComponent(sessionId) + '.json';
     const fbResp = await fetch(fbUrl);
     if (!fbResp.ok) {
       return new Response('Draft tidak ditemukan.', { status: 404, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
     }
     const data = await fbResp.json();
     if (data && typeof data.content === 'string') {
-      // Decode Base64 to raw text (with fallback for old data)
       var decoded;
       try {
         var bin = atob(data.content);
@@ -101,29 +137,4 @@ async function serveRaw(env, sessionId) {
   } catch (e) {
     return new Response('Error: ' + e.message, { status: 500, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
   }
-}
-
-// ---------- Fetch an asset, following ASSETS clean-URL redirects ----------
-async function fetchAsset(env, filePath, origin) {
-  const url = filePath.startsWith('http') ? filePath : origin + filePath;
-  let resp = await env.ASSETS.fetch(new Request(url));
-
-  // Follow ASSETS clean-URL redirect (307) server-side
-  if ((resp.status === 307 || resp.status === 301 || resp.status === 302) && resp.headers.get('Location')) {
-    const loc = resp.headers.get('Location');
-    const redirectUrl = loc.startsWith('http') ? loc : origin + loc;
-    resp = await env.ASSETS.fetch(new Request(redirectUrl));
-  }
-
-  // Inject config into HTML assets
-  const ct = resp.headers.get('Content-Type') || '';
-  if (ct.includes('text/html')) {
-    const html = await resp.text();
-    return new Response(injectConfig(html, env), {
-      status: resp.status,
-      headers: resp.headers,
-    });
-  }
-
-  return resp;
 }

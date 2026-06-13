@@ -135,9 +135,7 @@ Open **http://localhost:3000** — start typing!
 
 ## Cloudflare Workers Setup
 
-If you prefer Cloudflare over Node.js:
-
-1. Fill in Firebase config in your `wrangler.jsonc` under `vars`:
+1. **Fill in Firebase config** in `wrangler.jsonc` → `vars` (replace every empty `""`):
 ```jsonc
 {
   "vars": {
@@ -153,13 +151,15 @@ If you prefer Cloudflare over Node.js:
 }
 ```
 
-2. Deploy:
+> **Penting:** Jangan deploy dengan nilai kosong `""` — akan error `firebaseConfig is not defined` di browser.
+
+2. **Deploy:**
 ```bash
 npm install --save-dev wrangler
 npx wrangler deploy
 ```
 
-> For production, use `npx wrangler secret put FIREBASE_API_KEY` etc. to keep values out of `wrangler.jsonc`.
+> Untuk production, gunakan `npx wrangler secret put FIREBASE_API_KEY` (satu per satu) agar nilai tidak tersimpan di `wrangler.jsonc`.
 
 ---
 

@@ -6,6 +6,9 @@
     "directory": "./public",
     "binding": "ASSETS"
   },
+  // Replace empty strings with your Firebase config values.
+  // Get them from Firebase Console > Project settings > Web app.
+  // For sensitive values, use: npx wrangler secret put FIREBASE_API_KEY
   "vars": {
     "FIREBASE_API_KEY": "",
     "FIREBASE_AUTH_DOMAIN": "",
