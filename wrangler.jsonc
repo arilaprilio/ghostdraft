@@ -2,21 +2,11 @@
   "name": "ghostdraft",
   "main": "worker.js",
   "compatibility_date": "2024-09-01",
+  "keep_vars": true,
+
   "assets": {
     "directory": "./public",
-    "binding": "ASSETS"
-  },
-  // Replace empty strings with your Firebase config values.
-  // Get them from Firebase Console > Project settings > Web app.
-  // For sensitive values, use: npx wrangler secret put FIREBASE_API_KEY
-  "vars": {
-    "FIREBASE_API_KEY": "",
-    "FIREBASE_AUTH_DOMAIN": "",
-    "FIREBASE_DATABASE_URL": "",
-    "FIREBASE_PROJECT_ID": "",
-    "FIREBASE_STORAGE_BUCKET": "",
-    "FIREBASE_MESSAGING_SENDER_ID": "",
-    "FIREBASE_APP_ID": "",
-    "FIREBASE_MEASUREMENT_ID": ""
+    "binding": "ASSETS",
+    "run_worker_first": true
   }
 }
