@@ -33,13 +33,13 @@ Live draft autosave — type anything, it saves to the cloud in real time. No pu
 
 | Platform | Button |
 |----------|--------|
-| **Vercel** | [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/YOUR_USER/ghostdraft) |
-| **Heroku** | [![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/YOUR_USER/ghostdraft) |
-| **Railway** | [![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/template?template=https://github.com/YOUR_USER/ghostdraft) |
+| **Vercel** | [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/arilaprilio/ghostdraft) |
+| **Heroku** | [![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/arilaprilio/ghostdraft) |
+| **Railway** | [![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/template?template=https://github.com/arilaprilio/ghostdraft) |
 | **Cloudflare Workers** | `npx wrangler deploy` (see below) |
 | **Render** | Point to this repo → Build: `npm install`, Start: `npm start` |
 
-> Replace `YOUR_USER/ghostdraft` with your actual GitHub repo path after pushing.
+
 
 ---
 
@@ -53,7 +53,7 @@ Live draft autosave — type anything, it saves to the cloud in real time. No pu
 ### 1. Clone & install
 
 ```bash
-git clone https://github.com/YOUR_USER/ghostdraft.git
+git clone https://github.com/arilaprilio/ghostdraft.git
 cd ghostdraft
 npm install    # optional — only needed for wrangler deploy
 ```
