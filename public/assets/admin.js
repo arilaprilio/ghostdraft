@@ -124,9 +124,9 @@ function renderTable() {
     const checked = selected[id] ? ' checked' : '';
     tr.innerHTML =
       '<td><input type="checkbox" class="row-check" data-id="' + esc(id) + '"' + checked + '></td>' +
-      '<td>' + esc(draft.title || '-') + '</td>' +
+      '<td>' + esc(draft.title || '—') + '</td>' +
       '<td><code>' + esc(id) + '</code></td>' +
-      '<td>' + esc(draft.language || '-') + '</td>' +
+      '<td>' + esc(draft.language || '—') + '</td>' +
       '<td>' + (draft.length || 0) + '</td>' +
       '<td>' + fmtTime(draft.createdAt) + '</td>' +
       '<td>' + fmtTime(draft.updatedAt) + '</td>' +
@@ -241,7 +241,7 @@ function showDetail(id, draft) {
     '<p><strong>Created:</strong> ' + fmtTime(draft.createdAt) + '</p>' +
     '<p><strong>Updated:</strong> ' + fmtTime(draft.updatedAt) + '</p>' +
     '<p><strong>Length:</strong> ' + (draft.length || 0) + ' characters</p>' +
-    '<p><strong>User Agent:</strong> ' + esc(draft.userAgent || '-') + '</p>' +
+    '<p><strong>User Agent:</strong> ' + esc(draft.userAgent || '—') + '</p>' +
     '<h5>Content</h5>' +
     '<pre class="draft-content">' + esc(gdDecode(draft.content || '')) + '</pre>' +
     '<p style="margin-top:12px"><a href="/d/' + esc(id) + '" target="_blank" rel="noopener">Open viewer →</a></p>' +
@@ -269,6 +269,6 @@ function esc(s) {
 }
 
 function fmtTime(ts) {
-  if (!ts) return '-';
+  if (!ts) return '—';
   return new Date(ts).toISOString().replace('T', ' ').replace(/\..+/, '');
 }

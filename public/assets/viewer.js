@@ -53,7 +53,7 @@ if (!sessionId) {
         el.viewerContent.innerHTML = highlighted;
         el.viewerLang.textContent = lang;
       } else if (lang) {
-        // Language not in highlight.js bundle - try auto-detect
+        // Language not in highlight.js bundle — try auto-detect
         var highlighted = hljs.highlightAuto(decoded).value;
         el.viewerContent.innerHTML = highlighted;
         el.viewerLang.textContent = lang + ' (auto)';

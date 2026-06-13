@@ -204,7 +204,7 @@ async function doSave() {
   } catch (err) {
     console.error('GhostDraft save error:', err);
     setStatus('Error: ' + (err.message || err.code || 'unknown'), 'error');
-    // Retry on next keystroke - debounce will trigger again
+    // Retry on next keystroke — debounce will trigger again
   }
 }
 

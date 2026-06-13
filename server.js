@@ -4,6 +4,35 @@ const fs = require('fs');
 const path = require('path');
 const url = require('url');
 
+// Load .env file (Node.js doesn't auto-load it)
+try {
+  const envPath = path.join(__dirname, '.env');
+  if (fs.existsSync(envPath)) {
+    const lines = fs.readFileSync(envPath, 'utf8').split('\n');
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith('#')) continue;
+      const eq = trimmed.indexOf('=');
+      if (eq > 0) {
+        const key = trimmed.slice(0, eq).trim();
+        const val = trimmed.slice(eq + 1).trim();
+        if (!process.env[key]) process.env[key] = val;
+      }
+    }
+  }
+} catch (_) { /* .env optional */ }
+
+// Validate required config
+const missing = [];
+if (!process.env.FIREBASE_API_KEY) missing.push('FIREBASE_API_KEY');
+if (!process.env.FIREBASE_DATABASE_URL) missing.push('FIREBASE_DATABASE_URL');
+if (missing.length) {
+  console.warn('[GhostDraft] WARNING: Missing env vars:', missing.join(', '));
+  console.warn('[GhostDraft] Copy .env.example to .env and fill in your Firebase config.');
+} else {
+  console.log('[GhostDraft] Firebase config loaded from .env (databaseURL: ' + process.env.FIREBASE_DATABASE_URL + ')');
+}
+
 const PORT = process.env.PORT || 3000;
 const PUBLIC = path.join(__dirname, 'public');
 
@@ -30,6 +59,27 @@ const ROUTES = {
 
 const STATIC_EXTS = ['.css', '.js', '.json', '.png', '.svg', '.woff', '.woff2', '.ttf', '.eot', '.ico', '.jpg', '.gif', '.webp'];
 
+// ---------- Firebase config from env ----------
+function getFirebaseConfig() {
+  return {
+    apiKey: process.env.FIREBASE_API_KEY || '',
+    authDomain: process.env.FIREBASE_AUTH_DOMAIN || '',
+    databaseURL: process.env.FIREBASE_DATABASE_URL || '',
+    projectId: process.env.FIREBASE_PROJECT_ID || '',
+    storageBucket: process.env.FIREBASE_STORAGE_BUCKET || '',
+    messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID || '',
+    appId: process.env.FIREBASE_APP_ID || '',
+    measurementId: process.env.FIREBASE_MEASUREMENT_ID || '',
+  };
+}
+
+function injectConfig(html) {
+  const config = getFirebaseConfig();
+  const script = '<script>var firebaseConfig = ' + JSON.stringify(config) + ';</script>';
+  return html.replace('<!-- FIREBASE_CONFIG -->', script);
+}
+
+// ---------- Static file serving ----------
 function serveFile(res, filePath) {
   const full = path.join(PUBLIC, filePath);
   // Prevent path traversal
@@ -45,69 +95,67 @@ function serveFile(res, filePath) {
       return;
     }
     const ext = path.extname(filePath).toLowerCase();
+    let content = data;
+    // Inject Firebase config into HTML files
+    if (ext === '.html') {
+      content = injectConfig(data.toString('utf8'));
+    }
     res.writeHead(200, { 'Content-Type': MIME[ext] || 'application/octet-stream' });
-    res.end(data);
+    res.end(content);
   });
 }
 
+// ---------- Raw proxy (server-side, no client Firebase needed) ----------
 function serveRaw(res, sessionId) {
-  const configPath = path.join(PUBLIC, 'assets', 'firebase-config.js');
-  fs.readFile(configPath, 'utf8', (err, configText) => {
-    if (err) {
-      res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
-      res.end('Error: config not found');
-      return;
-    }
-    const m = configText.match(/databaseURL:\s*["']([^"']+)["']/);
-    if (!m) {
-      res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
-      res.end('Error: databaseURL not configured');
-      return;
-    }
-    const dbUrl = m[1].replace(/\/$/, '');
-    const fbUrl = dbUrl + '/drafts/' + encodeURIComponent(sessionId) + '.json';
+  const databaseURL = process.env.FIREBASE_DATABASE_URL;
+  if (!databaseURL) {
+    res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('Error: FIREBASE_DATABASE_URL not configured.');
+    return;
+  }
+  const dbUrl = databaseURL.replace(/\/$/, '');
+  const fbUrl = dbUrl + '/drafts/' + encodeURIComponent(sessionId) + '.json';
 
-    const proto = fbUrl.startsWith('https') ? https : http;
-    proto.get(fbUrl, (fbRes) => {
-      let body = '';
-      fbRes.on('data', c => body += c);
-      fbRes.on('end', () => {
-        try {
-          const data = JSON.parse(body);
-          if (data && typeof data.content === 'string') {
-            // Decode Base64
-            let decoded;
-            try {
-              const bin = Buffer.from(data.content, 'base64').toString('binary');
-              decoded = Buffer.from(bin, 'binary').toString('utf8');
-            } catch (e) {
-              decoded = data.content;
-            }
-            res.writeHead(200, {
-              'Content-Type': 'text/plain; charset=utf-8',
-              'Cache-Control': 'public, max-age=10',
-            });
-            res.end(decoded);
-          } else {
-            res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
-            res.end('Draft tidak ditemukan.');
+  const proto = fbUrl.startsWith('https') ? https : http;
+  proto.get(fbUrl, (fbRes) => {
+    let body = '';
+    fbRes.on('data', c => body += c);
+    fbRes.on('end', () => {
+      try {
+        const data = JSON.parse(body);
+        if (data && typeof data.content === 'string') {
+          // Decode Base64
+          let decoded;
+          try {
+            const bin = Buffer.from(data.content, 'base64').toString('binary');
+            decoded = Buffer.from(bin, 'binary').toString('utf8');
+          } catch (e) {
+            decoded = data.content;
           }
-        } catch (e) {
-          res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
-          res.end('Error parsing response.');
+          res.writeHead(200, {
+            'Content-Type': 'text/plain; charset=utf-8',
+            'Cache-Control': 'public, max-age=10',
+          });
+          res.end(decoded);
+        } else {
+          res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+          res.end('Draft tidak ditemukan.');
         }
-      });
-    }).on('error', () => {
-      res.writeHead(502, { 'Content-Type': 'text/plain; charset=utf-8' });
-      res.end('Error: Firebase unreachable.');
+      } catch (e) {
+        res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
+        res.end('Error parsing response.');
+      }
     });
+  }).on('error', () => {
+    res.writeHead(502, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('Error: Firebase unreachable.');
   });
 }
 
+// ---------- Server ----------
 const server = http.createServer((req, res) => {
   const parsed = url.parse(req.url);
   const pathname = parsed.pathname;
-  const method = req.method;
 
   // Security: block path traversal
   if (pathname.includes('..')) {

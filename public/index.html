@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GhostDraft - Live Draft Editor</title>
-  <meta name="description" content="GhostDraft - type anything and it autosaves in real time.">
+  <title>GhostDraft — Live Draft Editor</title>
+  <meta name="description" content="GhostDraft — type anything and it autosaves in real time.">
   <link rel="icon" href="/favicon.ico" sizes="any">
   <link rel="stylesheet" href="/css/inter-ui.css">
   <link rel="stylesheet" href="/css/fontello.css">
@@ -62,10 +62,10 @@
     </main>
     <footer class="footer-bar">
       <div class="footer-left">
-        <code id="sessionId" title="Session ID">-</code>
+        <code id="sessionId" title="Session ID">—</code>
         <button id="copySessionBtn" class="btn btn-small" title="Copy session ID">Copy ID</button>
         <span class="footer-sep">·</span>
-        <a id="viewerLink" href="#" target="_blank" rel="noopener">/d/-</a>
+        <a id="viewerLink" href="#" target="_blank" rel="noopener">/d/—</a>
         <button id="copyViewerBtn" class="btn btn-small" title="Copy viewer link">Copy link</button>
         <a id="rawLink" class="btn btn-small hidden" target="_blank" rel="noopener" title="View raw content">Raw</a>
         <button id="qrBtn" class="btn btn-small hidden" title="Show QR code">QR</button>
@@ -87,7 +87,8 @@
     </div>
   </div>
 
-  <script src="/assets/firebase-config.js"></script>
+  <!-- FIREBASE_CONFIG -->
+  <script src="/assets/ghostdraft.js"></script>
   <script src="/assets/editor.js"></script>
 </body>
 </html>
